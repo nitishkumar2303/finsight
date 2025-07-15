@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Portfolio from "../pages/Portfolio";
 import Login from "../pages/Login";
 import Signup from "../pages/Signup";
+import News from "../pages/News.jsx";
 // import Login from "../pages/Login";
 // import Signup from "../pages/Signup";
 // import Dashboard from "../pages/Dashboard";
@@ -10,13 +11,13 @@ import Signup from "../pages/Signup";
 const AppRoutes = () => {
   return (
     <div>
-        
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Portfolio />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
-          
+          <Route path="/news" element={<News />} />
+
           {/* <Route path="/login" element={<Login />} /> */}
           {/* <Route path="/signup" element={<Signup />} /> */}
           {/* <Route path="/dashboard" element={<Dashboard />} /> */}

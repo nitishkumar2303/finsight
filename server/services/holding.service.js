@@ -7,7 +7,7 @@ export const createHolding = async ({userId , ticker , quantity, purchasePrice, 
     }
 
     const holding = new Holding({
-      userId: userIs,
+      userId: userId,
       ticker: ticker.toUpperCase(),
       quantity,
       purchasePrice,
@@ -22,3 +22,24 @@ export const createHolding = async ({userId , ticker , quantity, purchasePrice, 
     throw new Error(error.message || "Internal server error");
   }
 }
+
+
+export const getHoldings = async (userId) => {
+  try {
+    if (!userId) {
+      throw new Error("User ID is required.");
+    }
+
+    const holdings = await Holding.find({ userId });
+    // console.log("Holdings fetched:", holdings);
+
+    if (!holdings || holdings.length === 0) {
+      throw new Error("No holdings found for this user");
+    }
+
+    return holdings;
+  } catch (error) {
+    console.error("Error fetching holdings:", error);
+    throw new Error(error.message || "Internal server error");
+  }
+} 

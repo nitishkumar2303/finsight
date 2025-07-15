@@ -1,0 +1,67 @@
+const fetchStocksAndPrices = async (forceRefresh = false) => {
+    setLoading(true);
+
+    // Always fetch holdings fresh
+    let holdings = [];
+    try {
+      const holdingsResponse = await axios.get(`${API}/holdings/get`);
+      holdings = holdingsResponse.data;
+    } catch (error) {
+      console.error("Error fetching holdings:", error);
+      setLoading(false);
+      return;
+    }
+
+    // Check cache for prices
+    let prices = {};
+    if (!forceRefresh) {
+      const cachedPrices = localStorage.getItem(CACHE_KEY);
+      const cachedTime = localStorage.getItem(CACHE_TIME_KEY);
+      if (
+        cachedPrices &&
+        cachedTime &&
+        Date.now() - parseInt(cachedTime, 10) < CACHE_DURATION
+      ) {
+        prices = JSON.parse(cachedPrices);
+      } else {
+        // Fetch live prices
+        const tickers = holdings.map((h) => h.ticker).join(",");
+        try {
+          const pricesResponse = await axios.get(
+            `${API}/stock/live-prices?tickers=${tickers}`
+          );
+          prices = pricesResponse.data;
+          localStorage.setItem(CACHE_KEY, JSON.stringify(prices));
+          localStorage.setItem(CACHE_TIME_KEY, Date.now().toString());
+        } catch (error) {
+          console.error("Error fetching live prices:", error);
+        }
+      }
+    } else {
+      // Force refresh prices
+      const tickers = holdings.map((h) => h.ticker).join(",");
+      try {
+        const pricesResponse = await axios.get(
+          `${API}/stock/live-prices?tickers=${tickers}`
+        );
+        prices = pricesResponse.data;
+        localStorage.setItem(CACHE_KEY, JSON.stringify(prices));
+        localStorage.setItem(CACHE_TIME_KEY, Date.now().toString());
+      } catch (error) {
+        console.error("Error fetching live prices:", error);
+      }
+    }
+
+    // Merge prices into holdings for display
+    const stocksWithPrices = holdings.map((h) => ({
+      ...h,
+      livePrice: prices[h.ticker] || null,
+    }));
+
+    setStock(stocksWithPrices);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchStocksAndPrices();
+  }, []);
