@@ -12,20 +12,26 @@ import portfolioRoutes from "./routes/portfolioRoutes.js";
 import holdingRoutes from "./routes/holdingRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import stockRoutes from "./routes/stock.routes.js";
+import sentimentRoutes from "./routes/sentimentRoutes.js";
+import stockInsightsRoutes from "./routes/stockInsights.routes.js";
+import testRoutes from "./routes/testRoutes.js";
 
 const app = express();
 const PORT = process.env.PORT || 5050;
 
 //Middlewares
 app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
 //Routes
 app.use("/api/portfolio", portfolioRoutes);
 app.use("/api/holdings", holdingRoutes);
 app.use("/api/users", userRoutes);
-app.use("/api/stock" , stockRoutes);
+app.use("/api/stock", stockRoutes);
+app.use("/api/sentiment", sentimentRoutes);
+app.use("/api/stock-insights", stockInsightsRoutes);
+app.use("/api/test", testRoutes);
 
 // app.use("/api/stocks", stockRoutes); // placeholder
 

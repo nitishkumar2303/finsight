@@ -1,6 +1,14 @@
 import Holding from "../config/models/holding.model.js";
 
-export const createHolding = async ({userId , ticker , quantity, purchasePrice, purchaseDate, notes}) => {
+export const createHolding = async ({
+  userId,
+  ticker,
+  quantity,
+  purchasePrice,
+  purchaseDate,
+  notes,
+  stockMetadata,
+}) => {
   try {
     if (!ticker || !quantity || !purchasePrice) {
       throw new Error("Ticker, quantity, and purchase price are required.");
@@ -13,6 +21,7 @@ export const createHolding = async ({userId , ticker , quantity, purchasePrice, 
       purchasePrice,
       purchaseDate: purchaseDate ? new Date(purchaseDate) : new Date(),
       notes: notes || "",
+      stockMetadata: stockMetadata || {},
     });
 
     await holding.save();
@@ -21,8 +30,7 @@ export const createHolding = async ({userId , ticker , quantity, purchasePrice, 
     console.error("Error creating holding:", error);
     throw new Error(error.message || "Internal server error");
   }
-}
-
+};
 
 export const getHoldings = async (userId) => {
   try {
@@ -33,13 +41,10 @@ export const getHoldings = async (userId) => {
     const holdings = await Holding.find({ userId });
     // console.log("Holdings fetched:", holdings);
 
-    if (!holdings || holdings.length === 0) {
-      throw new Error("No holdings found for this user");
-    }
-
-    return holdings;
+    // Return empty array instead of throwing error for no holdings
+    return holdings || [];
   } catch (error) {
     console.error("Error fetching holdings:", error);
     throw new Error(error.message || "Internal server error");
   }
-} 
+};
