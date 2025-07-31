@@ -7,7 +7,6 @@ import {
   getStockSuggestions,
 } from "../controllers/stock.controller.js";
 import { verifyLogin } from "../middleware/auth.middleware.js";
-import { get } from "mongoose";
 
 const router = express.Router();
 

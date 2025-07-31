@@ -56,7 +56,7 @@ app.use("/api/holdings", holdingRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/stock", stockRoutes);
 app.use("/api/sentiment", sentimentRoutes);
-app.use("/api/stock-insights", stockInsightsRoutes);
+// app.use("/api/stock-insights", stockInsightsRoutes); // Temporarily commented out
 app.use("/api/test", testRoutes);
 
 // app.use("/api/stocks", stockRoutes); // placeholder
