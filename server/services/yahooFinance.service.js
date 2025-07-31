@@ -3,17 +3,21 @@ import StockPrice from "../config/models/stockPrice.model.js";
 
 class YahooFinanceService {
   constructor() {
-    this.baseURL = "https://yahoo-finance15.p.rapidapi.com/api/v1/markets/stock";
+    this.baseURL =
+      "https://yahoo-finance15.p.rapidapi.com/api/v1/markets/stock";
     this.headers = {
       "X-RapidAPI-Key": process.env.RAPIDAPI_KEY,
       "X-RapidAPI-Host": "yahoo-finance15.p.rapidapi.com",
     };
-    
+
     // Debug: Check if API key is loaded
     if (!process.env.RAPIDAPI_KEY) {
       console.error("❌ RAPIDAPI_KEY is not set in environment variables!");
     } else {
-      console.log("✅ RAPIDAPI_KEY found:", process.env.RAPIDAPI_KEY.substring(0, 10) + "...");
+      console.log(
+        "✅ RAPIDAPI_KEY found:",
+        process.env.RAPIDAPI_KEY.substring(0, 10) + "..."
+      );
     }
   }
 
@@ -23,15 +27,18 @@ class YahooFinanceService {
       console.log(`🔍 Making API request for ${ticker}...`);
       console.log(`📍 URL: ${this.baseURL}/quote`);
       console.log(`🔑 Headers:`, this.headers);
-      
+
       const response = await axios.get(`${this.baseURL}/quote`, {
         headers: this.headers,
         params: { symbols: ticker },
         timeout: 10000, // 10 second timeout
       });
-      
+
       console.log(`✅ API response status for ${ticker}:`, response.status);
-      console.log(`📊 API response data for ${ticker}:`, JSON.stringify(response.data, null, 2));
+      console.log(
+        `📊 API response data for ${ticker}:`,
+        JSON.stringify(response.data, null, 2)
+      );
       return response.data;
     } catch (error) {
       console.error(`❌ Error fetching price from API for ${ticker}:`);
@@ -42,9 +49,6 @@ class YahooFinanceService {
       return null;
     }
   }
-  
-  // ...existing code...
-}
 
   // Determine market cap category based on market cap value
   getMarketCapCategory(marketCap) {
@@ -249,19 +253,23 @@ class YahooFinanceService {
   // Mock metadata for testing market cap categorization
   getMockMetadata(ticker) {
     const mockData = {
-      'AAPL': { marketCap: 3200000000000, price: 211.27, sector: 'Technology' }, // $3.2T - Large Cap
-      'MSFT': { marketCap: 2800000000000, price: 512.57, sector: 'Technology' }, // $2.8T - Large Cap  
-      'JNJ': { marketCap: 425000000000, price: 168.11, sector: 'Healthcare' }, // $425B - Large Cap
-      'BA': { marketCap: 115000000000, price: 226.08, sector: 'Industrials' }, // $115B - Large Cap
-      'XOM': { marketCap: 485000000000, price: 112.88, sector: 'Energy' }, // $485B - Large Cap
-      'ALK': { marketCap: 6800000000, price: 54.15, sector: 'Industrials' }, // $6.8B - Mid Cap
-      'DOCU': { marketCap: 16500000000, price: 79.88, sector: 'Technology' }, // $16.5B - Large Cap
-      'ENPH': { marketCap: 4200000000, price: 33.48, sector: 'Technology' }, // $4.2B - Mid Cap
-      'GME': { marketCap: 6900000000, price: 22.55, sector: 'Consumer Cyclical' }, // $6.9B - Mid Cap
+      AAPL: { marketCap: 3200000000000, price: 211.27, sector: "Technology" }, // $3.2T - Large Cap
+      MSFT: { marketCap: 2800000000000, price: 512.57, sector: "Technology" }, // $2.8T - Large Cap
+      JNJ: { marketCap: 425000000000, price: 168.11, sector: "Healthcare" }, // $425B - Large Cap
+      BA: { marketCap: 115000000000, price: 226.08, sector: "Industrials" }, // $115B - Large Cap
+      XOM: { marketCap: 485000000000, price: 112.88, sector: "Energy" }, // $485B - Large Cap
+      ALK: { marketCap: 6800000000, price: 54.15, sector: "Industrials" }, // $6.8B - Mid Cap
+      DOCU: { marketCap: 16500000000, price: 79.88, sector: "Technology" }, // $16.5B - Large Cap
+      ENPH: { marketCap: 4200000000, price: 33.48, sector: "Technology" }, // $4.2B - Mid Cap
+      GME: { marketCap: 6900000000, price: 22.55, sector: "Consumer Cyclical" }, // $6.9B - Mid Cap
     };
 
-    const mock = mockData[ticker] || { marketCap: 5000000000, price: 100, sector: 'Unknown' };
-    
+    const mock = mockData[ticker] || {
+      marketCap: 5000000000,
+      price: 100,
+      sector: "Unknown",
+    };
+
     return {
       companyName: ticker,
       sector: mock.sector,
@@ -275,8 +283,8 @@ class YahooFinanceService {
       recommendationKey: "buy",
       peRatio: 25,
       profitMargins: 0.15,
-      returnOnEquity: 0.20,
-      revenueGrowth: 0.10,
+      returnOnEquity: 0.2,
+      revenueGrowth: 0.1,
       earningsGrowth: 0.12,
       metadataFetchedAt: new Date(),
     };
