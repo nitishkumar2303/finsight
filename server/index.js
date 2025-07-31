@@ -20,7 +20,20 @@ const app = express();
 const PORT = process.env.PORT || 5050;
 
 //Middlewares
-app.use(cors());
+// Updated CORS configuration for production
+const corsOptions = {
+  origin: [
+    "https://finsighthub.online",
+    "http://localhost:5173", // for local development
+    "http://localhost:3000", // alternative local port
+  ],
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  optionsSuccessStatus: 200,
+};
+
+app.use(cors(corsOptions));
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
