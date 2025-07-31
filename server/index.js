@@ -20,20 +20,33 @@ const app = express();
 const PORT = process.env.PORT || 5050;
 
 //Middlewares
-// Updated CORS configuration for production
-const corsOptions = {
-  origin: [
-    "https://finsighthub.online",
-    "http://localhost:5173", // for local development
-    "http://localhost:3000", // alternative local port
-  ],
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  optionsSuccessStatus: 200,
-};
+// Simplified CORS configuration
+app.use(
+  cors({
+    origin: "*", // Allow all origins
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+    credentials: false, // Must be false when origin is "*"
+  })
+);
 
-app.use(cors());// Use the updated CORS options to allow requests from the specified origins
+// Handle preflight OPTIONS requests
+app.options("*", (req, res) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Content-Type,Authorization,X-Requested-With"
+  );
+  res.sendStatus(200);
+});
+
+// Add debugging middleware to log requests
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.path} - Origin: ${req.headers.origin}`);
+  next();
+});
+
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 

@@ -3,48 +3,48 @@ import StockPrice from "../config/models/stockPrice.model.js";
 
 class YahooFinanceService {
   constructor() {
-    this.baseURL =
-      "https://yahoo-finance15.p.rapidapi.com/api/v1/markets/stock";
+    this.baseURL = "https://yahoo-finance15.p.rapidapi.com/api/v1/markets/stock";
     this.headers = {
-      "X-RapidAPI-Key": process.env.RAPIDAPI_KEY, // Add this to your .env file
+      "X-RapidAPI-Key": process.env.RAPIDAPI_KEY,
       "X-RapidAPI-Host": "yahoo-finance15.p.rapidapi.com",
     };
     
+    // Debug: Check if API key is loaded
+    if (!process.env.RAPIDAPI_KEY) {
+      console.error("❌ RAPIDAPI_KEY is not set in environment variables!");
+    } else {
+      console.log("✅ RAPIDAPI_KEY found:", process.env.RAPIDAPI_KEY.substring(0, 10) + "...");
+    }
   }
 
   // Get cached price from database
   async getPriceFromAPI(ticker) {
     try {
+      console.log(`🔍 Making API request for ${ticker}...`);
+      console.log(`📍 URL: ${this.baseURL}/quote`);
+      console.log(`🔑 Headers:`, this.headers);
+      
       const response = await axios.get(`${this.baseURL}/quote`, {
         headers: this.headers,
         params: { symbols: ticker },
+        timeout: 10000, // 10 second timeout
       });
-      console.log(`API response for ${ticker}:`, JSON.stringify(response.data, null, 2));
+      
+      console.log(`✅ API response status for ${ticker}:`, response.status);
+      console.log(`📊 API response data for ${ticker}:`, JSON.stringify(response.data, null, 2));
       return response.data;
     } catch (error) {
-      console.error(`Error fetching price from API for ${ticker}:`, error.message);
+      console.error(`❌ Error fetching price from API for ${ticker}:`);
+      console.error(`   Status: ${error.response?.status}`);
+      console.error(`   Status Text: ${error.response?.statusText}`);
+      console.error(`   Data: ${JSON.stringify(error.response?.data)}`);
+      console.error(`   Message: ${error.message}`);
       return null;
     }
   }
-  async getCachedPrice(ticker) {
-    try {
-      const stockPrice = await StockPrice.findOne({ ticker })
-        .sort({ "values.datetime": -1 })
-        .limit(1);
-
-      if (stockPrice && stockPrice.values && stockPrice.values.length > 0) {
-        const latestPrice = stockPrice.values[stockPrice.values.length - 1];
-        return latestPrice.close;
-      }
-      return null;
-    } catch (error) {
-      console.error(
-        `Error fetching cached price for ${ticker}:`,
-        error.message
-      );
-      return null;
-    }
-  }
+  
+  // ...existing code...
+}
 
   // Determine market cap category based on market cap value
   getMarketCapCategory(marketCap) {
