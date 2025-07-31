@@ -9,9 +9,23 @@ class YahooFinanceService {
       "X-RapidAPI-Key": process.env.RAPIDAPI_KEY, // Add this to your .env file
       "X-RapidAPI-Host": "yahoo-finance15.p.rapidapi.com",
     };
+    
   }
 
   // Get cached price from database
+  async getPriceFromAPI(ticker) {
+    try {
+      const response = await axios.get(`${this.baseURL}/quote`, {
+        headers: this.headers,
+        params: { symbols: ticker },
+      });
+      console.log(`API response for ${ticker}:`, JSON.stringify(response.data, null, 2));
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching price from API for ${ticker}:`, error.message);
+      return null;
+    }
+  }
   async getCachedPrice(ticker) {
     try {
       const stockPrice = await StockPrice.findOne({ ticker })

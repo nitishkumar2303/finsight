@@ -26,7 +26,7 @@ export const fetchLivePrice = async (ticker) => {
         },
       }
     );
-    // console.log(`🔍 Response for ${ticker}:`, response.data);
+    console.log(`🔍 Response for ${ticker}:`, response.data);
 
     // Correct extraction from 'series'
     const price = response.data?.series?.[0]?.close || 0;
@@ -56,6 +56,8 @@ export const fetchPriceHistory = async (ticker, startDate, endDate) => {
         },
       }
     );
+
+    console.log(`📈 Price history for ${ticker}:`, response.data);
     return response.data?.values || [];
   } catch (err) {
     console.error(`❌ Price history fetch error for ${ticker}:`, err.message);
