@@ -26,8 +26,6 @@ const StockInsights = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const API = import.meta.env.VITE_API_URL;
-
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -46,8 +44,8 @@ const StockInsights = () => {
       setError(null);
 
       const url = forceRefresh
-        ? `${API}/stock-insights/${ticker}?refresh=true`
-        : `${API}/stock-insights/${ticker}`;
+        ? `/stock-insights/${ticker}?refresh=true`
+        : `/stock-insights/${ticker}`;
 
       const response = await axios.get(url);
 

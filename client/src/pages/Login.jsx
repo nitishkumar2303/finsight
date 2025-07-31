@@ -5,7 +5,6 @@ import axios from "../config/axios";
 import { useState, useEffect } from "react";
 
 const LoginPage = () => {
-  const API = import.meta.env.VITE_API_URL; // Ensure this is set in your .env file
   const navigate = useNavigate();
   const [formData, setFormData] = useState({ email: "", password: "" });
 
@@ -29,7 +28,7 @@ const LoginPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post(`${API}/users/login`, formData);
+      const response = await axios.post("/users/login", formData);
       console.log(response);
 
       localStorage.setItem("token", response.data.token);
@@ -53,7 +52,6 @@ const LoginPage = () => {
             >
               finsight
             </h1>
-           
           </div>
 
           <div className="card bg-base-100 shadow-xl border border-base-300 p-6">

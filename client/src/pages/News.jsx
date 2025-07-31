@@ -21,7 +21,6 @@ const News = () => {
   const [sentimentLoading, setSentimentLoading] = useState(false);
   const [usingFallback, setUsingFallback] = useState(false);
 
-  const API = import.meta.env.VITE_API_URL;
   const NEWS_API_KEY = "d1rcav9r01qk8n665f1gd1rcav9r01qk8n665f20";
 
   // Mock data for trending tickers
@@ -38,7 +37,7 @@ const News = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await axios.get(`${API}/holdings/get`);
+      const response = await axios.get("/holdings/get");
       setHoldings(response.data);
     } catch (err) {
       setError("Failed to fetch holdings");
@@ -130,7 +129,7 @@ const News = () => {
         source: article.source || "",
       }));
 
-      const response = await axios.post(`${API}/sentiment/analyze`, {
+      const response = await axios.post("/sentiment/analyze", {
         articles: optimizedArticles,
       });
       setSentimentData(response.data.data);

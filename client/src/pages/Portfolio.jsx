@@ -69,7 +69,6 @@ const Dashboard = () => {
     }
   }, []);
 
-  const API = import.meta.env.VITE_API_URL; // Ensure this is set in your .env file
   const [stock, setStock] = useState([]);
   const [loading, setLoading] = useState(true);
   const [chartData, setChartData] = useState({
@@ -101,7 +100,7 @@ const Dashboard = () => {
     // Always fetch holdings fresh
     let holdings = [];
     try {
-      const holdingsResponse = await axios.get(`${API}/holdings/get`);
+      const holdingsResponse = await axios.get("/holdings/get");
       holdings = holdingsResponse.data;
       // console.log("Holdings fetched:", holdings);
     } catch (error) {
@@ -112,7 +111,7 @@ const Dashboard = () => {
 
     // Fetch portfolio insights
     try {
-      const insightsResponse = await axios.get(`${API}/holdings/insights`);
+      const insightsResponse = await axios.get("/holdings/insights");
       setPortfolioInsights(insightsResponse.data);
       console.log("Portfolio insights fetched:", insightsResponse.data);
     } catch (error) {
@@ -125,7 +124,7 @@ const Dashboard = () => {
     // console.log("Fetching latest prices for tickers:", tickers);
     try {
       const pricesResponse = await axios.get(
-        `${API}/stock/last-price?tickers=${tickers.join(",")}`
+        `/stock/last-price?tickers=${tickers.join(",")}`
       );
       prices = pricesResponse.data; // { TICKER: lastPriceObj, ... }
       // console.log("Latest prices fetched:", prices);
@@ -188,7 +187,7 @@ const Dashboard = () => {
       try {
         const token = localStorage.getItem("token");
         const response = await axios.get(
-          `${API}/portfolio/net-worth-history?range=${selectedRange}`,
+          `/portfolio/net-worth-history?range=${selectedRange}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         const data = response.data;
@@ -1265,7 +1264,7 @@ const Dashboard = () => {
                   e.preventDefault();
                   setModalLoading(true);
                   try {
-                    await axios.post(`${API}/holdings/add`, form, {
+                    await axios.post("/holdings/add", form, {
                       headers: {
                         Authorization: `Bearer ${localStorage.getItem(
                           "token"

@@ -4,7 +4,6 @@ import dashSS from "../assets/dashSS.png"; // Assuming you have a dashboard prev
 import axios from "../config/axios";
 
 const Signup = () => {
-  const API = import.meta.env.VITE_API_URL; // Ensure this is set in your .env file
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: "",
@@ -23,7 +22,7 @@ const Signup = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post(`${API}/users/register`, formData);
+      const response = await axios.post("/users/register", formData);
 
       localStorage.setItem("token", response.data.token);
       localStorage.setItem("user", JSON.stringify(response.data.user));
@@ -47,7 +46,6 @@ const Signup = () => {
             >
               finsight
             </h1>
-           
           </div>
 
           <div className="card bg-base-100 shadow-xl border border-base-300 p-6">
