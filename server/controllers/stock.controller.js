@@ -4,6 +4,7 @@ import {
   fetchPriceHistory,
 } from "../services/stock.service.js"; // for USA stocks
 import StockPrice from "../config/models/stockPrice.model.js";
+import YahooFinanceService from "../services/yahooFinance.service.js";
 
 export const getLivePrice = async (req, res) => {
   try {
@@ -175,6 +176,38 @@ export const getCronStatus = async (req, res) => {
       success: false,
       message: "Failed to get cron status",
       error: error.message,
+    });
+  }
+};
+
+export const getStockSuggestions = async (req, res) => {
+  try {
+    const { query } = req.query;
+
+    if (!query || query.trim().length < 1) {
+      return res.status(400).json({
+        error: "Search query is required and must be at least 1 character long",
+      });
+    }
+
+    console.log(`🔍 Getting stock suggestions for query: ${query}`);
+
+    const suggestions = await YahooFinanceService.getStockSuggestions(
+      query.trim()
+    );
+
+    res.status(200).json({
+      success: true,
+      query: query.trim(),
+      suggestions: suggestions,
+      count: suggestions.length,
+    });
+  } catch (error) {
+    console.error("❌ Failed to get stock suggestions:", error.message);
+    res.status(500).json({
+      success: false,
+      error: "Failed to get stock suggestions",
+      message: error.message,
     });
   }
 };

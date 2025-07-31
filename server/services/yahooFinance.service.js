@@ -3,48 +3,111 @@ import StockPrice from "../config/models/stockPrice.model.js";
 
 class YahooFinanceService {
   constructor() {
-    this.baseURL =
-      "https://yahoo-finance15.p.rapidapi.com/api/v1/markets/stock";
-    this.headers = {
-      "X-RapidAPI-Key": process.env.RAPIDAPI_KEY,
-      "X-RapidAPI-Host": "yahoo-finance15.p.rapidapi.com",
-    };
+    this.geminiApiUrl =
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
+    this.geminiApiKey = process.env.GEMINI_API_KEY;
 
     // Debug: Check if API key is loaded
-    if (!process.env.RAPIDAPI_KEY) {
-      console.error("❌ RAPIDAPI_KEY is not set in environment variables!");
+    if (!this.geminiApiKey) {
+      console.error("❌ GEMINI_API_KEY is not set in environment variables!");
     } else {
       console.log(
-        "✅ RAPIDAPI_KEY found:",
-        process.env.RAPIDAPI_KEY.substring(0, 10) + "..."
+        "✅ GEMINI_API_KEY found:",
+        this.geminiApiKey.substring(0, 10) + "..."
       );
     }
   }
 
   // Get cached price from database
+  async getCachedPrice(ticker) {
+    try {
+      const stockPrice = await StockPrice.findOne({ ticker })
+        .sort({ "values.datetime": -1 })
+        .limit(1);
+
+      if (stockPrice && stockPrice.values && stockPrice.values.length > 0) {
+        const latestPrice = stockPrice.values[stockPrice.values.length - 1];
+        return latestPrice.close;
+      }
+      return null;
+    } catch (error) {
+      console.error(
+        `Error fetching cached price for ${ticker}:`,
+        error.message
+      );
+      return null;
+    }
+  }
+
+  // Get stock data from Gemini AI
   async getPriceFromAPI(ticker) {
     try {
-      console.log(`🔍 Making API request for ${ticker}...`);
-      console.log(`📍 URL: ${this.baseURL}/quote`);
-      console.log(`🔑 Headers:`, this.headers);
+      console.log(`� Fetching stock data for ${ticker} using Gemini AI...`);
 
-      const response = await axios.get(`${this.baseURL}/quote`, {
-        headers: this.headers,
-        params: { symbols: ticker },
-        timeout: 10000, // 10 second timeout
-      });
+      const currentDate = new Date().toISOString().split("T")[0]; // YYYY-MM-DD format
 
-      console.log(`✅ API response status for ${ticker}:`, response.status);
-      console.log(
-        `📊 API response data for ${ticker}:`,
-        JSON.stringify(response.data, null, 2)
+      const prompt = `Get the latest stock information for ${ticker} as of ${currentDate}. 
+      Please provide ONLY a JSON response with the following exact structure (no additional text):
+      {
+        "symbol": "${ticker}",
+        "price": current_stock_price_number,
+        "currency": "USD",
+        "lastUpdated": "${currentDate}",
+        "success": true
+      }
+      
+      Make sure to provide the most recent available stock price data. If the stock doesn't exist, set success to false.`;
+
+      const response = await axios.post(
+        `${this.geminiApiUrl}?key=${this.geminiApiKey}`,
+        {
+          contents: [
+            {
+              parts: [
+                {
+                  text: prompt,
+                },
+              ],
+            },
+          ],
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          timeout: 15000,
+        }
       );
-      return response.data;
+
+      console.log(
+        `✅ Gemini API response status for ${ticker}:`,
+        response.status
+      );
+
+      const geminiResponse =
+        response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+      if (geminiResponse) {
+        try {
+          // Clean the response to extract JSON
+          const jsonMatch = geminiResponse.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            const stockData = JSON.parse(jsonMatch[0]);
+            console.log(`📊 Parsed stock data for ${ticker}:`, stockData);
+            return stockData;
+          }
+        } catch (parseError) {
+          console.error(
+            `❌ Error parsing Gemini response for ${ticker}:`,
+            parseError.message
+          );
+        }
+      }
+
+      return null;
     } catch (error) {
-      console.error(`❌ Error fetching price from API for ${ticker}:`);
+      console.error(`❌ Error fetching stock data from Gemini for ${ticker}:`);
       console.error(`   Status: ${error.response?.status}`);
-      console.error(`   Status Text: ${error.response?.statusText}`);
-      console.error(`   Data: ${JSON.stringify(error.response?.data)}`);
       console.error(`   Message: ${error.message}`);
       return null;
     }
@@ -64,132 +127,196 @@ class YahooFinanceService {
     return "Micro Cap"; // < $300M
   }
 
-  // Fetch stock metadata from Yahoo Finance (for cron job - full API fetch)
+  // Fetch stock metadata from Gemini AI (for cron job - full API fetch)
   async getStockMetadata(ticker) {
     try {
-      console.log(`Fetching metadata for ticker: ${ticker}`);
+      console.log(`Fetching metadata for ticker: ${ticker} using Gemini AI`);
 
-      // Fetch financial data module
-      const financialResponse = await axios.get(`${this.baseURL}/modules`, {
-        headers: this.headers,
-        params: {
-          symbol: ticker,
-          module: "financial-data",
+      const currentDate = new Date().toISOString().split("T")[0];
+
+      const prompt = `Get comprehensive stock information for ${ticker} as of ${currentDate}. 
+      Please provide ONLY a JSON response with the following exact structure (no additional text):
+      {
+        "symbol": "${ticker}",
+        "companyName": "Company Full Name",
+        "sector": "Sector Name",
+        "industry": "Industry Name",
+        "marketCap": market_cap_in_dollars_number,
+        "currency": "USD",
+        "exchange": "Exchange Name",
+        "currentPrice": current_price_number,
+        "targetMeanPrice": analyst_target_price_number,
+        "recommendationKey": "buy/hold/sell",
+        "peRatio": pe_ratio_number,
+        "profitMargins": profit_margin_decimal,
+        "returnOnEquity": roe_decimal,
+        "revenueGrowth": revenue_growth_decimal,
+        "earningsGrowth": earnings_growth_decimal,
+        "lastUpdated": "${currentDate}",
+        "success": true
+      }
+      
+      Make sure all financial data is current and accurate. If the stock doesn't exist or data is unavailable, set success to false.`;
+
+      const response = await axios.post(
+        `${this.geminiApiUrl}?key=${this.geminiApiKey}`,
+        {
+          contents: [
+            {
+              parts: [
+                {
+                  text: prompt,
+                },
+              ],
+            },
+          ],
         },
-      });
-
-      // Fetch company profile for sector/industry info
-      const profileResponse = await axios.get(`${this.baseURL}/modules`, {
-        headers: this.headers,
-        params: {
-          symbol: ticker,
-          module: "asset-profile",
-        },
-      });
-
-      // Fetch price data for market cap
-      const priceResponse = await axios.get(`${this.baseURL}/modules`, {
-        headers: this.headers,
-        params: {
-          symbol: ticker,
-          module: "price",
-        },
-      });
-
-      const financialData = financialResponse.data?.body || {};
-      const profileData = profileResponse.data?.body || {};
-      const priceData = priceResponse.data?.body || {};
-
-      // Debug: Log all available keys and look for market cap
-      console.log(`\n=== DEBUG for ${ticker} ===`);
-      console.log(`Financial data keys:`, Object.keys(financialData));
-      console.log(`Price data keys:`, Object.keys(priceData));
-      console.log(`Profile data keys:`, Object.keys(profileData));
-
-      // Look for any field containing "market" or "cap"
-      const allFields = { ...financialData, ...priceData, ...profileData };
-      const marketCapFields = Object.keys(allFields).filter(
-        (key) =>
-          key.toLowerCase().includes("market") ||
-          key.toLowerCase().includes("cap")
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          timeout: 20000,
+        }
       );
-      console.log(`Fields containing 'market' or 'cap':`, marketCapFields);
 
-      // Get market cap from financial data (it should be in the same format as totalCash)
-      let marketCap = null;
+      console.log(
+        `✅ Gemini metadata response status for ${ticker}:`,
+        response.status
+      );
 
-      // Try different possible locations for market cap
-      // Market cap might be named differently in the API response
-      const possibleMarketCapFields = [
-        "marketCap",
-        "marketCapitalization",
-        "enterpriseValue",
-        "marketValue",
-        "totalMarketValue",
-        "sharesOutstanding",
-      ];
+      const geminiResponse =
+        response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
-      for (const field of possibleMarketCapFields) {
-        if (financialData[field]?.raw) {
-          marketCap = financialData[field].raw;
-          console.log(`Found ${field} in financialData: ${marketCap}`);
-          break;
-        } else if (priceData[field]?.raw) {
-          marketCap = priceData[field].raw;
-          console.log(`Found ${field} in priceData: ${marketCap}`);
-          break;
-        } else if (profileData[field]?.raw) {
-          marketCap = profileData[field].raw;
-          console.log(`Found ${field} in profileData: ${marketCap}`);
-          break;
+      if (geminiResponse) {
+        try {
+          // Clean the response to extract JSON
+          const jsonMatch = geminiResponse.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            const stockData = JSON.parse(jsonMatch[0]);
+
+            if (stockData.success) {
+              const metadata = {
+                companyName: stockData.companyName || ticker,
+                sector: stockData.sector || "",
+                industry: stockData.industry || "",
+                marketCap: stockData.marketCap || null,
+                marketCapCategory: this.getMarketCapCategory(
+                  stockData.marketCap
+                ),
+                currency: stockData.currency || "USD",
+                exchange: stockData.exchange || "",
+                currentPrice: stockData.currentPrice || null,
+                targetMeanPrice: stockData.targetMeanPrice || null,
+                recommendationKey: stockData.recommendationKey || "",
+                peRatio: stockData.peRatio || null,
+                profitMargins: stockData.profitMargins || null,
+                returnOnEquity: stockData.returnOnEquity || null,
+                revenueGrowth: stockData.revenueGrowth || null,
+                earningsGrowth: stockData.earningsGrowth || null,
+                metadataFetchedAt: new Date(),
+              };
+
+              console.log(
+                `Successfully fetched metadata for ${ticker}:`,
+                metadata
+              );
+              return metadata;
+            }
+          }
+        } catch (parseError) {
+          console.error(
+            `❌ Error parsing Gemini metadata response for ${ticker}:`,
+            parseError.message
+          );
         }
       }
 
-      // If we found sharesOutstanding, calculate market cap
-      if (
-        !marketCap &&
-        priceData.sharesOutstanding?.raw &&
-        priceData.regularMarketPrice?.raw
-      ) {
-        marketCap =
-          priceData.sharesOutstanding.raw * priceData.regularMarketPrice.raw;
-        console.log(`Calculated marketCap from shares * price: ${marketCap}`);
-      }
-
-      console.log(`Final market cap for ${ticker}: ${marketCap}`);
-      console.log(`=== END DEBUG ===\n`);
-
-      const metadata = {
-        companyName: profileData.longName || profileData.shortName || ticker,
-        sector: profileData.sector || "",
-        industry: profileData.industry || "",
-        marketCap: marketCap,
-        marketCapCategory: this.getMarketCapCategory(marketCap),
-        currency:
-          financialData.financialCurrency || priceData.currency || "USD",
-        exchange: priceData.exchangeName || priceData.exchange || "",
-        currentPrice:
-          financialData.currentPrice?.raw ||
-          priceData.regularMarketPrice?.raw ||
-          null,
-        targetMeanPrice: financialData.targetMeanPrice?.raw || null,
-        recommendationKey: financialData.recommendationKey || "",
-        peRatio: priceData.trailingPE?.raw || null,
-        profitMargins: financialData.profitMargins?.raw || null,
-        returnOnEquity: financialData.returnOnEquity?.raw || null,
-        revenueGrowth: financialData.revenueGrowth?.raw || null,
-        earningsGrowth: financialData.earningsGrowth?.raw || null,
-        metadataFetchedAt: new Date(),
-      };
-
-      console.log(`Successfully fetched metadata for ${ticker}:`, metadata);
-      return metadata;
+      // If Gemini fails, use mock data for testing
+      console.log(`Gemini failed for ${ticker}, using mock data for testing`);
+      return this.getMockMetadata(ticker);
     } catch (error) {
       console.error(`Error fetching metadata for ${ticker}:`, error.message);
 
       // If API fails, try to use mock data for testing
       console.log(`API failed for ${ticker}, using mock data for testing`);
       return this.getMockMetadata(ticker);
+    }
+  }
+
+  // Get stock suggestions for search dropdown
+  async getStockSuggestions(query) {
+    try {
+      console.log(`🔍 Getting stock suggestions for: ${query}`);
+
+      const prompt = `Provide stock ticker suggestions for the search query "${query}". 
+      Please provide ONLY a JSON response with the following exact structure (no additional text):
+      {
+        "suggestions": [
+          {
+            "symbol": "TICKER1",
+            "name": "Company Name 1",
+            "exchange": "NASDAQ"
+          },
+          {
+            "symbol": "TICKER2", 
+            "name": "Company Name 2",
+            "exchange": "NYSE"
+          }
+        ],
+        "success": true
+      }
+      
+      Include up to 10 relevant stock suggestions. Match by company name, ticker symbol, or industry. Only include real, actively traded stocks.`;
+
+      const response = await axios.post(
+        `${this.geminiApiUrl}?key=${this.geminiApiKey}`,
+        {
+          contents: [
+            {
+              parts: [
+                {
+                  text: prompt,
+                },
+              ],
+            },
+          ],
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          timeout: 10000,
+        }
+      );
+
+      console.log(`✅ Gemini suggestions response status:`, response.status);
+
+      const geminiResponse =
+        response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+      if (geminiResponse) {
+        try {
+          // Clean the response to extract JSON
+          const jsonMatch = geminiResponse.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            const suggestionData = JSON.parse(jsonMatch[0]);
+            console.log(`📊 Stock suggestions for ${query}:`, suggestionData);
+            return suggestionData.suggestions || [];
+          }
+        } catch (parseError) {
+          console.error(
+            `❌ Error parsing Gemini suggestions response:`,
+            parseError.message
+          );
+        }
+      }
+
+      return [];
+    } catch (error) {
+      console.error(`❌ Error fetching stock suggestions from Gemini:`);
+      console.error(`   Status: ${error.response?.status}`);
+      console.error(`   Message: ${error.message}`);
+      return [];
     }
   }
 
